@@ -1,0 +1,37 @@
+
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:p="/lib/hudson/project">
+    <l:layout title="Promotions : ${it.owner.displayName}">
+        <st:include page="sidepanel.jelly" it="${it.owner}" />
+        <l:main-panel>
+            <h1>Promotions</h1>
+
+            <j:forEach var="level" items="${it.promotionLevelNames}">
+                <h2>
+                    <img src="${imagesURL}/32x32/star-gold.gif"/> ${level}
+                </h2>
+                <j:set var="hasPromotedBuilds" value="false"/>
+                <j:forEach var="build" items="${it.promotedBuilds}">
+                  
+                    <j:if test="${build.promotedLevel == level}">
+                        <p>
+                        <t:buildLink job="${build.build.project}" number="${build.build.number}" jobName="${build.build.name}" />
+                        </p>
+                        <j:set var="hasPromotedBuilds" value="true"/>
+
+                    </j:if>
+                </j:forEach>
+                <j:choose>
+                    <j:when test="${hasPromotedBuilds == true}">
+
+                    </j:when>
+
+                    <j:otherwise>
+                        <p>
+                            No build promoted so far.
+                        </p>
+                    </j:otherwise>
+                </j:choose>
+            </j:forEach>
+        </l:main-panel>
+    </l:layout>
+</j:jelly>
