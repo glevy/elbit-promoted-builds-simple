@@ -27,6 +27,7 @@ import hudson.PluginWrapper;
 import hudson.model.AbstractProject;
 import hudson.model.BuildBadgeAction;
 import hudson.model.Hudson;
+import hudson.FilePath;
 import hudson.Functions;
 import hudson.model.Job;
 import hudson.model.Run;
@@ -165,7 +166,11 @@ public class PromoteAction implements BuildBadgeAction {
         }
         try {
             Runtime runtime = Runtime.getRuntime();
-            String command = "ln " + "-s " + targetBuildDirectory.getAbsolutePath() + " " + promotionDirectory.getAbsolutePath() + "/" + targetBuildNumber;
+            //String command = "ln " + "-s " + targetBuildDirectory.getAbsolutePath() + " " + promotionDirectory.getAbsolutePath() + "/" + targetBuildNumber;
+            String jobRootPath = new File(targetBuildDirectory.getParent()).getParent();
+            String relativeTargetBuildDirectory = new File(jobRootPath).toURI().relativize(targetBuildDirectory.toURI()).getPath();
+            String command = "ln " + "-s " + "../../" + relativeTargetBuildDirectory + " " + promotionDirectory.getAbsolutePath() + "/" + targetBuildNumber;
+
             Process process = runtime.exec(command);
             int exitValue = process.waitFor();
             System.out.println("ExitValue: " + exitValue);
