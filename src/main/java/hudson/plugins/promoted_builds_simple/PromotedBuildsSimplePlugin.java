@@ -26,16 +26,13 @@ package hudson.plugins.promoted_builds_simple;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Plugin;
-import hudson.model.AbstractProject;
 import hudson.model.Descriptor.FormException;
 import hudson.model.Hudson;
 import hudson.model.Job;
-import hudson.model.Project;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.model.listeners.RunListener;
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -47,24 +44,18 @@ import org.kohsuke.stapler.StaplerResponse;
 
 /**
  * Simply add a link in the main page sidepanel.
- * @author Alan.Harder@sun.com
- * 
- * 
- * 
+ * @author Alan Harder
  */
 public class PromotedBuildsSimplePlugin extends Plugin {
-
     private List<PromotionLevel> levels = new ArrayList<PromotionLevel>();
 
-    //yuri: method called first on app load.
-    @Override
-    public void start() throws Exception {
+    @Override public void start() throws Exception {
         // Default levels (load() will replace these if customized)
-        levels.add(new PromotionLevel("QA build", "qa.gif", true));
-        levels.add(new PromotionLevel("QA approved", "qa-green.gif", true));
-        levels.add(new PromotionLevel("GA release", "ga.gif", true));
+        levels.add(new PromotionLevel("QA build", "qa.gif", true, false));
+        levels.add(new PromotionLevel("QA approved", "qa-green.gif", true, false));
+        levels.add(new PromotionLevel("GA release", "ga.gif", true, false));
+        levels.add(new PromotionLevel("Promoted Release", "elbit_promoted.gif", true, true));
         load();
-        //save();
     }
 
     public List<PromotionLevel> getLevels() { return levels; }
@@ -73,57 +64,8 @@ public class PromotedBuildsSimplePlugin extends Plugin {
             throws IOException, ServletException, FormException {
         levels.clear();
         levels.addAll(req.bindJSONToList(PromotionLevel.class, formData.get("levels")));
-
-
-        List<Project> projects = Hudson.getInstance().getProjects();
-        for (Project project : projects) {
-            updateFileSystem(project);
-        }
         save();
     }
-
-    /**Creates promotions directories on filesystem. Called from configure method
-     * for each promotion level.
-     */
-    private void updateFileSystem(Project owner) {
-        File promotionsDirectory = new File(owner.getRootDir(), "promotions");
-        promotionsDirectory.mkdirs();
-
-        List<PromotionLevel> levels = getLevels();
-        //add new level directory
-        for (PromotionLevel promotionLevel : levels) {
-            File promotionLevelDirectory = new File(promotionsDirectory.getAbsolutePath(), promotionLevel.getName().replaceAll(" ", "_"));
-            promotionLevelDirectory.mkdir();
-        }
-        //delete level directory
-        File [] levelDirectories = promotionsDirectory.listFiles();
-        for (int i = 0; i < levelDirectories.length; i++){
-            boolean isDeleted = true;
-            for (PromotionLevel promotionLevel : levels){
-                if (promotionLevel.getName().equalsIgnoreCase(levelDirectories[i].getName().replaceAll("_", " "))){
-                    isDeleted = false;
-                }
-            }
-            if (isDeleted){
-                deleteDirectory(levelDirectories[i]);
-            }
-        }
-    }
-    /** Deletes directory. Used for deleting old promotions directories in case
-     *  when doesn't present in current configuration.
-     */
-    private void deleteDirectory(File directory){
-        File [] files = directory.listFiles();
-        for (File file : files){
-            if (file.isDirectory() ){
-                deleteDirectory(file);
-            }else {
-                file.delete();
-            }
-        }
-        directory.delete();
-    }
-
 
     public void doMakePromotable(StaplerRequest req, StaplerResponse rsp) throws IOException {
         req.findAncestorObject(Job.class).checkPermission(Run.UPDATE);
@@ -132,7 +74,7 @@ public class PromotedBuildsSimplePlugin extends Plugin {
             run.addAction(new PromoteAction());
             run.save();
             rsp.sendRedirect(
-                    req.getRequestURI().substring(0, req.getRequestURI().indexOf("parent/parent")));
+                req.getRequestURI().substring(0, req.getRequestURI().indexOf("parent/parent")));
         }
     }
 
@@ -168,7 +110,6 @@ public class PromotedBuildsSimplePlugin extends Plugin {
 
     @Extension
     public static class PromotedBuildsRunListener extends RunListener<Run> {
-
         public PromotedBuildsRunListener() {
             super(Run.class);
         }

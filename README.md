@@ -1,8 +1,6 @@
-promoted-builds-simple-ext-plugin
+elbit-promoted-builds-simple-plugin
 =================================
 
 Extension of Jenkins https://wiki.jenkins-ci.org/display/JENKINS/Promoted+Builds+Simple+Plugin.
-Creates promotions folder under job folder with folders for all promotion types. 
-These folders hold the links to builds that belong to relevant promotion.
-Supports Linux/Mac OS only.
+Adds an option to trigger Artifactory build promotion and another option to send an email on selected levels.
 

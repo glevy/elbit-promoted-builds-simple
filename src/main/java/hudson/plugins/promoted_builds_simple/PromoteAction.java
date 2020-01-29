@@ -42,11 +42,18 @@ import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
+import javax.mail.*;
+import javax.mail.internet.*;
+import java.util.Properties;
+import java.util.Date;
+import javax.activation.DataHandler;
+import javax.activation.DataSource;
+import javax.activation.FileDataSource;
 
 /**
  * Store promotion level for a build.
  * @author Alan.Harder@sun.com
- * @author yurin@tikalk.com
+ * @author gilad.levy@elbitsystems.com
  */
 @ExportedBean(defaultVisibility = 2)
 public class PromoteAction implements BuildBadgeAction {
@@ -56,8 +63,44 @@ public class PromoteAction implements BuildBadgeAction {
 
     public PromoteAction() { }
 
+
+    private static void sendMail(String host, String toEmail, String subject, String body) {
+        try
+	    {
+          Properties props = System.getProperties();
+          props.put("mail.smtp.host", host);
+          Session session = Session.getDefaultInstance(props, null);
+
+          MimeMessage msg = new MimeMessage(session);
+	      //set message headers
+	      msg.addHeader("Content-type", "text/HTML; charset=UTF-8");
+	      msg.addHeader("format", "flowed");
+	      msg.addHeader("Content-Transfer-Encoding", "8bit");
+
+	      msg.setFrom(new InternetAddress("no_reply@jenkins.com", "NoReply-JD"));
+
+	      msg.setReplyTo(InternetAddress.parse("no_reply@jenkins.com", false));
+
+	      msg.setSubject(subject, "UTF-8");
+
+	      msg.setText(body, "UTF-8");
+
+	      msg.setSentDate(new Date());
+
+	      msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail, false));
+	      System.out.println("Message is ready");
+    	  Transport.send(msg);  
+
+	      System.out.println("EMail Sent Successfully!!");
+	    }
+	    catch (Exception e) {
+	      e.printStackTrace();
+	    }
+
+    }
+
     /* Action methods */
-    public String getUrlName() { return "promote"; }
+    public String getUrlName() { return "epromote"; }
     public String getDisplayName() { return ""; }
     public String getIconFileName() { return null; }
 
@@ -68,12 +111,11 @@ public class PromoteAction implements BuildBadgeAction {
         if (icon == null || icon.startsWith("/")) return icon;
         // Try plugin images dir, fallback to main images dir
         PluginWrapper wrapper =
-                Hudson.getInstance().getPluginManager().getPlugin(PromotedBuildsSimplePlugin.class);
+            Hudson.getInstance().getPluginManager().getPlugin(PromotedBuildsSimplePlugin.class);
         return new File(wrapper.baseResourceURL.getPath() + "/images/" + icon).exists()
-                ? "/plugin/" + wrapper.getShortName() + "/images/" + icon
-                : Hudson.RESOURCE_PATH + "/images/16x16/" + icon;
+            ? "/plugin/" + wrapper.getShortName() + "/images/" + icon
+            : Hudson.RESOURCE_PATH + "/images/16x16/" + icon;
     }
-
     public static List<PromotionLevel> getAllPromotionLevels() {
         return Hudson.getInstance().getPlugin(PromotedBuildsSimplePlugin.class).getLevels();
     }
@@ -90,23 +132,10 @@ public class PromoteAction implements BuildBadgeAction {
         project.checkPermission(Run.UPDATE);
 
 
-        File promotionsDirectory = new File(owner.getRootDir(), "promotions");
-        promotionsDirectory.mkdirs();
-        List<PromotionLevel> levels = getAllPromotionLevels();
-        for (PromotionLevel promotionLevel : levels) {
-            File promotionLevelDirectory = new File(promotionsDirectory.getAbsolutePath(), promotionLevel.getName().replaceAll(" ", "_"));
-            promotionLevelDirectory.mkdir();
-        }
-        File[] levelDirectories = promotionsDirectory.listFiles();
-
-
-
         levelValue = Integer.parseInt(req.getParameter("level"));
         if (levelValue == 0) {
             level = icon = null;
-            Run currentBuild = req.findAncestorObject(Run.class);
-            currentBuild.save();
-            deleteOldLink(levelDirectories, currentBuild);
+            req.findAncestorObject(Run.class).save();
         } else {
             PromotionLevel src = getAllPromotionLevels().get(levelValue - 1);
             level = src.getName();
@@ -114,70 +143,29 @@ public class PromoteAction implements BuildBadgeAction {
             icon = src.getIcon();
 
             // Mark as keep-forever when promoting; this also does save()
-
-            Run currentBuild = req.findAncestorObject(Run.class);
             
             if (src.isAutoKeep())
-                currentBuild.keepLog(true);
+            req.findAncestorObject(Run.class).keepLog(true);
             else
-                currentBuild.save();
+            req.findAncestorObject(Run.class).save();
+            
+                    
+                if (src.isPromoteArtifacts())
+                  rsp.sendRedirect2("../promote");
 
-            PromoteAction promoteAction = currentBuild.getAction(PromoteAction.class);
-
-            for (int i = 0; i < levelDirectories.length; i++) {
-                //create new link
-                if (promoteAction.getLevel().replaceAll(" ", "_").equalsIgnoreCase(levelDirectories[i].getName())) {
-                    File buildDirectory = currentBuild.getRootDir();
-                    createLinkToBuildDirectory(buildDirectory, levelDirectories[i], currentBuild.number);
+                if (src.isEnableNotification()){
+                    String emailList = req.findAncestorObject(Run.class).getBuildVariables().get('promotionEmailList')
+                    String jobName = req.findAncestorObject(Run.class).getBuildVariables().get('JOB_BASE_NAME')
+                    String buildNumber = req.findAncestorObject(Run.class).getBuildVariables().get('BUILD_NUMBER')
+                    String subject = "$jobName:$buildNumber was promoted to $level"
+                    String body = req.findAncestorObject(Run.class).getBuildVariables().get('promotionEmailBody')
+                    String host = 
+                    sendMail(host, emailList, subject, body)
                 }
 
-            }
-
-            deleteOldLink(levelDirectories, currentBuild);            
-           
         }
+       
         rsp.forwardToPreviousPage(req);
     }
-    /** Called when already promoted build promoted to another promotion level.
-     * This cause to change filestystem structure -- old symlink is deleted.
-     *
-     *
-     */
-    private void deleteOldLink(File[] levelDirectories, Run build) {
-        for (File levelDirectory : levelDirectories) {
-            File[] links = levelDirectory.listFiles();
-            for (File link : links) {
-                String levelName = build.getAction(PromoteAction.class).getLevel();
-                String linkName = link.getName();
-                String levelDirectoryName = levelDirectory.getName();
-                if ((build.number + "").equalsIgnoreCase(linkName) && (levelName == null || !levelName.equalsIgnoreCase(levelDirectoryName.replaceAll("_", " ")))) {
-                    link.delete();
-                    return;
-                }
-            }
-        }
-    }
 
-    /**Creates symlink on Linux/Unix? os. On Windows does nothing.
-     */
-    private void createLinkToBuildDirectory(File targetBuildDirectory, File promotionDirectory, int targetBuildNumber) throws IOException {
-        if (Functions.isWindows()){
-            return;
-        }
-        try {
-            Runtime runtime = Runtime.getRuntime();
-            //String command = "ln " + "-s " + targetBuildDirectory.getAbsolutePath() + " " + promotionDirectory.getAbsolutePath() + "/" + targetBuildNumber;
-            String jobRootPath = new File(targetBuildDirectory.getParent()).getParent();
-            String relativeTargetBuildDirectory = new File(jobRootPath).toURI().relativize(targetBuildDirectory.toURI()).getPath();
-            String command = "ln " + "-s " + "../../" + relativeTargetBuildDirectory + " " + promotionDirectory.getAbsolutePath() + "/" + targetBuildNumber;
-
-            Process process = runtime.exec(command);
-            int exitValue = process.waitFor();
-            System.out.println("ExitValue: " + exitValue);
-            return ;
-        } catch (InterruptedException ex) {
-            Logger.getLogger(PromoteAction.class.getName()).log(Level.SEVERE, null, ex);
-            return ;
-        }
-    }
 }

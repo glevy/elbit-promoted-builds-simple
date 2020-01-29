@@ -32,22 +32,33 @@ import org.kohsuke.stapler.DataBoundConstructor;
 public class PromotionLevel {
     private String name, icon;
     private Boolean isAutoKeep;
+    private Boolean isPromoteArtifacts;
+    private Boolean isEnableNotification;
 
     @DataBoundConstructor
-    public PromotionLevel(String name, String icon, boolean isAutoKeep) {
+    public PromotionLevel(String name, String icon, boolean isAutoKeep, boolean isPromoteArtifacts, boolean isEnableNotification) {
         this.name = name;
         this.icon = icon;
         this.isAutoKeep = isAutoKeep;
+        this.isPromoteArtifacts = isPromoteArtifacts;
+        this.isEnableNotification = isEnableNotification;
     }
 
     public String getName() { return name; }
     public String getIcon() { return icon; }
+  //  public boolean getIsAutoKeep() { return isAutoKeep; }
+  //  public boolean getIsPromoteArtifacts() { return isPromoteArtifacts; }
     public boolean isAutoKeep() { return isAutoKeep; }
-
+    public boolean isPromoteArtifacts() { return isPromoteArtifacts; }
+    public boolean isEnableNotification() { return isEnableNotification; }
     // Default to true when upgrading from older versions
     private Object readResolve() {
         if (isAutoKeep == null)
             isAutoKeep = Boolean.TRUE;
+            if (isPromoteArtifacts == null)
+            isPromoteArtifacts = Boolean.TRUE;
+            if (isEnableNotification == null)
+            isEnableNotification = Boolean.TRUE;
         return this;
     }
 }

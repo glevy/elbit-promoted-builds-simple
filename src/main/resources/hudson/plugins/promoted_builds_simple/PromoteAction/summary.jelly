@@ -47,10 +47,10 @@ THE SOFTWARE.
             itemdata: [ { text: "${%Promote Build}",
                           submenu: { id: "promotechoices", itemdata: [
                       <j:if test="${hasLevel}">
-                            { text: "${%None}", url: "promote/?level=0" },
+                            { text: "${%None}", url: "epromote/?level=0" },
                       </j:if>
                       <j:forEach var="level" indexVar="i" items="${it.allPromotionLevels}">
-                            { text: "${level.name}", url: "promote/?level=${i+1}"
+                            { text: "${level.name}", url: "epromote/?level=${i+1}"
                               <j:if test="${it.level == level.name}">, checked: true</j:if> },
                       </j:forEach>
                           ] }

@@ -1,6 +1,4 @@
 <div>
   Simpler version of Promoted Builds plugin, with only manual promotion of builds.
-  Differences between this plugin and Promoted Builds (Simple) are promotions
-  page with links to all promoted builds and promotions directory on filesystem
-  with links to build directories.
+  Exteded with the ability to trigger Artifactory interactive build promotion.
 </div>

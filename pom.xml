@@ -2,10 +2,10 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
 	<modelVersion>4.0.0</modelVersion>
-	<artifactId>promoted-builds-simple-ext</artifactId>
+	<artifactId>elbit-promoted-builds-simple</artifactId>
 	<packaging>hpi</packaging>
-	<name>Promoted Builds (Extended Simple)</name>
-	<version>0.4.1</version>
+	<name>Promoted Builds (Elbit Systems)</name>
+	<version>0.1.1</version>
 	<url>http://wiki.jenkins-ci.org/display/JENKINS/Promoted+Builds+Simple+Ext+Plugin</url>
 
 	<parent>
@@ -14,6 +14,18 @@
 		<version>1.609.3</version>
 	</parent>
 
+	<properties>
+        <!-- Minimal version required by Pipeline dependencies in 2.14.0 -->
+        <!--jenkins.version>1.642.3</jenkins.version-->
+        <java.level>8</java.level>
+        <!-- TODO: enforcer is full of upper bound dependency issues, including real ones -->
+        <!--enforcer.skip>true</enforcer.skip-->
+        <findbugs.failOnError>false</findbugs.failOnError>
+        <!--Skip integration tests unless explicitly requested with -DskipITs=false-->
+        <skipITs>true</skipITs>
+
+	</properties>
+	
 	<dependencies>
 		<dependency>
 			<groupId>${project.groupId}</groupId>

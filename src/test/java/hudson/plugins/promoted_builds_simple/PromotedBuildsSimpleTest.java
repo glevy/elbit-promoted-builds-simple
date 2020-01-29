@@ -56,7 +56,7 @@ import org.jvnet.hudson.test.ExtractResourceSCM;
 import org.jvnet.hudson.test.HudsonTestCase;
 
 /**
- * Test interaction of promoted-builds-simple-ext plugin with Jenkins core.
+ * Test interaction of elbit-promoted-builds-simple plugin with Jenkins core.
  * @author Alan Harder
  */
 public class PromotedBuildsSimpleTest extends HudsonTestCase {
@@ -136,7 +136,7 @@ public class PromotedBuildsSimpleTest extends HudsonTestCase {
      */
     public void testAutoKeep() throws Exception {
         // Add a level that does not auto-keep (default levels do)
-        ((PromotedBuildsSimplePlugin)hudson.getPlugin("promoted-builds-simple-ext")).getLevels().add(
+        ((PromotedBuildsSimplePlugin)hudson.getPlugin("elbit-promoted-builds-simple")).getLevels().add(
                 new PromotionLevel("foo", "foo.gif", false));
         FreeStyleProject job = createFreeStyleProject();
         FreeStyleBuild build = job.scheduleBuild2(0, new UserCause()).get();
