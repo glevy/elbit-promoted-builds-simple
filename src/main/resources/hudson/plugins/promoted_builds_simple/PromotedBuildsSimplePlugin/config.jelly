@@ -47,7 +47,7 @@ THE SOFTWARE.
             <f:checkbox name="isPromoteArtifacts" checked="${level.promoteArtifacts}"/>
             <label class="attach-previous"> ${%Promote Artifactoty build} </label>
           </f:entry>
-          <f:entry help="/plugin/elbit-promoted-builds-simple/help-artifactory.html">
+          <f:entry help="/plugin/elbit-promoted-builds-simple/help-notification.html">
            <f:checkbox name="isEnableNotification" checked="${level.enableNotification}"/>
            <label class="attach-previous"> ${%Enable notification} </label>
           </f:entry>

@@ -165,10 +165,6 @@ public class PromoteAction implements BuildBadgeAction {
             else
             req.findAncestorObject(Run.class).save();
             
-                    
-                if (src.isPromoteArtifacts())
-                  rsp.sendRedirect2("../promote");
-
                 if (src.isEnableNotification()){
                   String emailList="";
                   String host = getSmtpHost();
@@ -192,13 +188,13 @@ public class PromoteAction implements BuildBadgeAction {
                     String line ="";
 
                     while ((line = rd.readLine()) != null) {
-                        System.out.println(emailList);
+                        System.out.println(line);
                         emailList = line.substring(line.indexOf('>')+1, line.indexOf('<',line.indexOf('>')));
                         System.out.println(emailList);
                     }
                     
-                    String subject = buildName + " : " + buildNum + " was promoted to " + level;
-                    String body = buildName + " : " + buildNum + " was promoted to " + level;
+                    String subject = "Build Promotion Notification: " + buildName + ":" + buildNum + " was promoted to " + level;
+                    String body = "You are getting this message because you were added to this Jenkins build promotion notification list by the job owner.\n\n " + buildName + " build number " + buildNum + " was promoted to level: " + level;
                     
                     System.out.println(subject);
                     System.out.println(emailList);
@@ -211,6 +207,8 @@ public class PromoteAction implements BuildBadgeAction {
                 }
                     
                 }
+                if (src.isPromoteArtifacts())
+                  rsp.sendRedirect2("../promote");
 
         }
        
