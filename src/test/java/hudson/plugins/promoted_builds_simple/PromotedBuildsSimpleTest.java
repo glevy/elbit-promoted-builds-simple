@@ -55,6 +55,7 @@ import org.jvnet.hudson.test.CaptureEnvironmentBuilder;
 import org.jvnet.hudson.test.ExtractResourceSCM;
 import org.jvnet.hudson.test.HudsonTestCase;
 
+
 /**
  * Test interaction of elbit-promoted-builds-simple plugin with Jenkins core.
  * @author Alan Harder

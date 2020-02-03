@@ -33,6 +33,8 @@ import hudson.model.Job;
 import hudson.model.Run;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,6 +51,14 @@ import java.util.Date;
 import javax.activation.DataHandler;
 import javax.activation.DataSource;
 import javax.activation.FileDataSource;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.DefaultHttpClient;
 
 /**
  * Store promotion level for a build.
@@ -62,7 +72,6 @@ public class PromoteAction implements BuildBadgeAction {
     private int levelValue;
 
     public PromoteAction() { }
-
 
     private static void sendMail(String host, String toEmail, String subject, String body) {
         try
@@ -120,11 +129,18 @@ public class PromoteAction implements BuildBadgeAction {
         return Hudson.getInstance().getPlugin(PromotedBuildsSimplePlugin.class).getLevels();
     }
 
-    /** Save change to promotion level for this build and redirect back to build page
-     *  Also called methods to creates/delete symlinks.
+    public static String getSmtpHost() {
+        return Hudson.getInstance().getPlugin(PromotedBuildsSimplePlugin.class).getSmtpHost();
+    }
+
+    /**
+     * Save change to promotion level for this build and redirect back to build page
+     * Also called methods to creates/delete symlinks.
+     * 
+     * @throws URISyntaxException
      */
     public void doIndex(StaplerRequest req, StaplerResponse rsp)
-            throws IOException, ServletException {
+            throws IOException, ServletException, URISyntaxException {
         List<Ancestor> ancs = req.getAncestors();
         AbstractProject owner = req.findAncestorObject(AbstractProject.class);
 
@@ -154,13 +170,46 @@ public class PromoteAction implements BuildBadgeAction {
                   rsp.sendRedirect2("../promote");
 
                 if (src.isEnableNotification()){
-                    String emailList = req.findAncestorObject(Run.class).getBuildVariables().get('promotionEmailList')
-                    String jobName = req.findAncestorObject(Run.class).getBuildVariables().get('JOB_BASE_NAME')
-                    String buildNumber = req.findAncestorObject(Run.class).getBuildVariables().get('BUILD_NUMBER')
-                    String subject = "$jobName:$buildNumber was promoted to $level"
-                    String body = req.findAncestorObject(Run.class).getBuildVariables().get('promotionEmailBody')
-                    String host = 
-                    sendMail(host, emailList, subject, body)
+                  String emailList="";
+                  String host = getSmtpHost();
+                  //  String buildURL = "http://desktop-2bh7ipj:8080/".concat(req.findAncestorObject(Run.class).getUrl());
+                  String buildURL = req.findAncestorObject(Run.class).getAbsoluteUrl();
+                    System.out.println(buildURL);
+                    try {
+                        URI uri = new URI(buildURL);
+                    
+                    String[] segments = uri.getPath().split("/");
+                    String buildNum = segments[segments.length-1];
+                    String buildName = segments[segments.length-2];
+                    String requestURL = buildURL.concat("api/xml?depth=2&xpath=*/action/environment/promotionEmailList");
+                    System.out.println("Request URL:");
+                    System.out.println(requestURL);
+                    HttpClient client = new DefaultHttpClient();
+                    HttpGet request = new HttpGet(requestURL);
+                    HttpResponse response = client.execute(request);
+                    BufferedReader rd = new BufferedReader (new InputStreamReader(response.getEntity().getContent()));
+                   
+                    String line ="";
+
+                    while ((line = rd.readLine()) != null) {
+                        System.out.println(emailList);
+                        emailList = line.substring(line.indexOf('>')+1, line.indexOf('<',line.indexOf('>')));
+                        System.out.println(emailList);
+                    }
+                    
+                    String subject = buildName + " : " + buildNum + " was promoted to " + level;
+                    String body = buildName + " : " + buildNum + " was promoted to " + level;
+                    
+                    System.out.println(subject);
+                    System.out.println(emailList);
+                    if((emailList != null && !emailList.isEmpty()) &&  (buildName != null && !buildName.isEmpty()) && (buildNum != null && !buildNum.isEmpty())){
+                        sendMail(host, emailList, subject, body);
+                    } 
+                }
+                catch(URISyntaxException e) {
+                    e.printStackTrace();
+                }
+                    
                 }
 
         }

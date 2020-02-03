@@ -48,22 +48,29 @@ import org.kohsuke.stapler.StaplerResponse;
  */
 public class PromotedBuildsSimplePlugin extends Plugin {
     private List<PromotionLevel> levels = new ArrayList<PromotionLevel>();
+    private String smtpHost;
 
     @Override public void start() throws Exception {
         // Default levels (load() will replace these if customized)
-        levels.add(new PromotionLevel("QA build", "qa.gif", true, false));
-        levels.add(new PromotionLevel("QA approved", "qa-green.gif", true, false));
-        levels.add(new PromotionLevel("GA release", "ga.gif", true, false));
-        levels.add(new PromotionLevel("Promoted Release", "elbit_promoted.gif", true, true));
+        levels.add(new PromotionLevel("QA build", "qa.gif", true, false, false));
+        levels.add(new PromotionLevel("QA approved", "qa-green.gif", true, false, false));
+        levels.add(new PromotionLevel("GA release", "ga.gif", true, false, false));
+        levels.add(new PromotionLevel("Promoted Release", "elbit_promoted.gif", true, true, false));
         load();
     }
 
     public List<PromotionLevel> getLevels() { return levels; }
+    public String getSmtpHost(){return smtpHost;}
+
 
     @Override public void configure(StaplerRequest req, JSONObject formData)
             throws IOException, ServletException, FormException {
         levels.clear();
+        this.smtpHost = null;
         levels.addAll(req.bindJSONToList(PromotionLevel.class, formData.get("levels")));
+      //  this.smtpHost = formData.get("smtpHost").toString();
+        this.smtpHost = formData.getString("smtpHost");
+     //   req.bindJSON(this, formData);
         save();
     }
 
