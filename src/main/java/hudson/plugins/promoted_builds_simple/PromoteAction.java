@@ -44,21 +44,7 @@ import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.export.Exported;
 import org.kohsuke.stapler.export.ExportedBean;
-import javax.mail.*;
-import javax.mail.internet.*;
-import java.util.Properties;
-import java.util.Date;
-import javax.activation.DataHandler;
-import javax.activation.DataSource;
-import javax.activation.FileDataSource;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
+
 
 /**
  * Store promotion level for a build.
@@ -73,40 +59,7 @@ public class PromoteAction implements BuildBadgeAction {
 
     public PromoteAction() { }
 
-    private static void sendMail(String host, String toEmail, String subject, String body) {
-        try
-	    {
-          Properties props = System.getProperties();
-          props.put("mail.smtp.host", host);
-          Session session = Session.getDefaultInstance(props, null);
-
-          MimeMessage msg = new MimeMessage(session);
-	      //set message headers
-	      msg.addHeader("Content-type", "text/HTML; charset=UTF-8");
-	      msg.addHeader("format", "flowed");
-	      msg.addHeader("Content-Transfer-Encoding", "8bit");
-
-	      msg.setFrom(new InternetAddress("no_reply@jenkins.com", "NoReply-JD"));
-
-	      msg.setReplyTo(InternetAddress.parse("no_reply@jenkins.com", false));
-
-	      msg.setSubject(subject, "UTF-8");
-
-	      msg.setText(body, "UTF-8");
-
-	      msg.setSentDate(new Date());
-
-	      msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail, false));
-	      System.out.println("Message is ready");
-    	  Transport.send(msg);  
-
-	      System.out.println("EMail Sent Successfully!!");
-	    }
-	    catch (Exception e) {
-	      e.printStackTrace();
-	    }
-
-    }
+   
 
     /* Action methods */
     public String getUrlName() { return "epromote"; }
@@ -129,10 +82,6 @@ public class PromoteAction implements BuildBadgeAction {
         return Hudson.getInstance().getPlugin(PromotedBuildsSimplePlugin.class).getLevels();
     }
 
-    public static String getSmtpHost() {
-        return Hudson.getInstance().getPlugin(PromotedBuildsSimplePlugin.class).getSmtpHost();
-    }
-
     /**
      * Save change to promotion level for this build and redirect back to build page
      * Also called methods to creates/delete symlinks.
@@ -140,7 +89,7 @@ public class PromoteAction implements BuildBadgeAction {
      * @throws URISyntaxException
      */
     public void doIndex(StaplerRequest req, StaplerResponse rsp)
-            throws IOException, ServletException, URISyntaxException {
+        throws IOException, ServletException, URISyntaxException {
         List<Ancestor> ancs = req.getAncestors();
         AbstractProject owner = req.findAncestorObject(AbstractProject.class);
 
@@ -166,49 +115,15 @@ public class PromoteAction implements BuildBadgeAction {
             req.findAncestorObject(Run.class).save();
             
                 if (src.isEnableNotification()){
-                  String emailList="";
-                  String host = getSmtpHost();
-                  //  String buildURL = "http://desktop-2bh7ipj:8080/".concat(req.findAncestorObject(Run.class).getUrl());
-                  String buildURL = req.findAncestorObject(Run.class).getAbsoluteUrl();
+                    String buildURL = req.findAncestorObject(Run.class).getAbsoluteUrl();
                     System.out.println(buildURL);
-                    try {
-                        URI uri = new URI(buildURL);
-                    
-                    String[] segments = uri.getPath().split("/");
-                    String buildNum = segments[segments.length-1];
-                    String buildName = segments[segments.length-2];
-                    String requestURL = buildURL.concat("api/xml?depth=2&xpath=*/action/environment/promotionEmailList");
-                    System.out.println("Request URL:");
-                    System.out.println(requestURL);
-                    HttpClient client = new DefaultHttpClient();
-                    HttpGet request = new HttpGet(requestURL);
-                    HttpResponse response = client.execute(request);
-                    BufferedReader rd = new BufferedReader (new InputStreamReader(response.getEntity().getContent()));
-                   
-                    String line ="";
+                    PromoteNotification msg = new PromoteNotification();
+                    msg.notify(buildURL,level);
 
-                    while ((line = rd.readLine()) != null) {
-                        System.out.println(line);
-                        emailList = line.substring(line.indexOf('>')+1, line.indexOf('<',line.indexOf('>')));
-                        System.out.println(emailList);
-                    }
-                    
-                    String subject = "Build Promotion Notification: " + buildName + ":" + buildNum + " was promoted to " + level;
-                    String body = "You are getting this message because you were added to this Jenkins build promotion notification list by the job owner.\n\n " + buildName + " build number " + buildNum + " was promoted to level: " + level;
-                    
-                    System.out.println(subject);
-                    System.out.println(emailList);
-                    if((emailList != null && !emailList.isEmpty()) &&  (buildName != null && !buildName.isEmpty()) && (buildNum != null && !buildNum.isEmpty())){
-                        sendMail(host, emailList, subject, body);
-                    } 
                 }
-                catch(URISyntaxException e) {
-                    e.printStackTrace();
-                }
-                    
-                }
+
                 if (src.isPromoteArtifacts())
-                  rsp.sendRedirect2("../promote");
+                  rsp.sendRedirect("../promote");
 
         }
        
