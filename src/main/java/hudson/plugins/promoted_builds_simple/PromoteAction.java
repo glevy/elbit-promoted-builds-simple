@@ -95,6 +95,8 @@ public class PromoteAction implements BuildBadgeAction {
 
         Job project = req.findAncestorObject(Job.class);
         project.checkPermission(Run.UPDATE);
+        Integer buildNum = req.findAncestorObject(Run.class).getNumber();
+        String buildName = project.getFullName();
 
 
         levelValue = Integer.parseInt(req.getParameter("level"));
@@ -110,20 +112,19 @@ public class PromoteAction implements BuildBadgeAction {
             // Mark as keep-forever when promoting; this also does save()
             
             if (src.isAutoKeep())
-            req.findAncestorObject(Run.class).keepLog(true);
-            else
-            req.findAncestorObject(Run.class).save();
+                req.findAncestorObject(Run.class).keepLog(true);
+                else
+                    req.findAncestorObject(Run.class).save();
             
-                if (src.isEnableNotification()){
-                    String buildURL = req.findAncestorObject(Run.class).getAbsoluteUrl();
-                    System.out.println(buildURL);
-                    PromoteNotification msg = new PromoteNotification();
-                    msg.notify(buildURL,level);
-
-                }
+            if (src.isEnableNotification()){
+                String buildURL = req.findAncestorObject(Run.class).getAbsoluteUrl();
+                System.out.println(buildURL);
+                PromoteNotification msg = new PromoteNotification();
+                msg.notify(buildURL,buildName,buildNum,level);
+            }
 
                 if (src.isPromoteArtifacts())
-                  rsp.sendRedirect("../promote");
+                    rsp.sendRedirect("../promote");
 
         }
        

@@ -138,7 +138,7 @@ public class PromotedBuildsSimpleTest extends HudsonTestCase {
     public void testAutoKeep() throws Exception {
         // Add a level that does not auto-keep (default levels do)
         ((PromotedBuildsSimplePlugin)hudson.getPlugin("elbit-promoted-builds-simple")).getLevels().add(
-                new PromotionLevel("foo", "foo.gif", false));
+                new PromotionLevel("foo", "foo.gif", false,false,false));
         FreeStyleProject job = createFreeStyleProject();
         FreeStyleBuild build = job.scheduleBuild2(0, new UserCause()).get();
         PromoteAction pa = build.getAction(PromoteAction.class);

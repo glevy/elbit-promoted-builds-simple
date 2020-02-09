@@ -27,7 +27,6 @@ import hudson.EnvVars;
 import hudson.Extension;
 import hudson.matrix.MatrixRun;
 import hudson.maven.MavenBuild;
-import hudson.maven.MavenModuleSetBuild;
 import hudson.model.Descriptor;
 import hudson.model.Run;
 import hudson.plugins.copyartifact.BuildSelector;

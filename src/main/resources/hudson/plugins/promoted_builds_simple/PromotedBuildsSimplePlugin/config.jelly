@@ -24,12 +24,7 @@ THE SOFTWARE.
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
   <f:section title="${%Promoted Builds}">
-  
-     <f:entry title="${%SMTP server}">
-            <f:textbox name="smtpHost" value="${it.smtpHost}"/>
-          </f:entry>
-
-    <f:entry title="${%Promotion Levels}" help="/plugin/elbit-promoted-builds-simple/help-plugin.html"
+     <f:entry title="${%Promotion Levels}" help="/plugin/elbit-promoted-builds-simple/help-plugin.html"
              description="${%List of promotion levels that may be assigned to builds}">
       <f:repeatable var="level" items="${it.levels}" name="levels" add="${%Add Level}">
         <table>
