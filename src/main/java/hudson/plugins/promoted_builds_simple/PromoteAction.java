@@ -103,6 +103,7 @@ public class PromoteAction implements BuildBadgeAction {
         if (levelValue == 0) {
             level = icon = null;
             req.findAncestorObject(Run.class).save();
+            rsp.forwardToPreviousPage(req);
         } else {
             PromotionLevel src = getAllPromotionLevels().get(levelValue - 1);
             level = src.getName();
@@ -120,15 +121,17 @@ public class PromoteAction implements BuildBadgeAction {
                 String buildURL = req.findAncestorObject(Run.class).getAbsoluteUrl();
                 System.out.println(buildURL);
                 PromoteNotification msg = new PromoteNotification();
-                msg.notify(buildURL,buildName,buildNum,level);
+                msg.notify(buildURL,buildName,buildNum,level);    
             }
 
-                if (src.isPromoteArtifacts())
-                    rsp.sendRedirect("../promote");
+            if (src.isPromoteArtifacts()){
+                rsp.sendRedirect2("../promote");
+            } else{
+                   rsp.forwardToPreviousPage(req);
+               }
 
         }
-       
-        rsp.forwardToPreviousPage(req);
+        
     }
 
 }
