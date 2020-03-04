@@ -3,11 +3,12 @@ package hudson.plugins.promoted_builds_simple;
 import javax.mail.*;
 import javax.mail.internet.*;
 import java.util.Date;
-
+import java.util.List;
 
 import org.acegisecurity.AccessDeniedException;
 
 import hudson.model.Job;
+import hudson.model.ParameterValue;
 import hudson.model.ParametersAction;
 import hudson.tasks.Mailer;
 
@@ -35,7 +36,9 @@ public class PromoteNotification {
     }
 
     public String getEmailList() {
-        return emailList;
+        if (emailList != null)
+            return emailList;
+            else return "";
     }
 
     public void setEmailList(String emailList) {
@@ -43,7 +46,9 @@ public class PromoteNotification {
     }
 
     public String getSubject() {
-        return subject;
+        if (subject != null)
+           return subject;
+            else return "";
     }
 
     public void setSubject(String subject) {
@@ -51,7 +56,9 @@ public class PromoteNotification {
     }
 
     public String getBody() {
-        return body;
+        if (body != null)
+            return body;
+            else return "";
     }
 
     public void setBody(String body) {
@@ -59,7 +66,9 @@ public class PromoteNotification {
     }
 
     public String getLevel() {
-        return level;
+        if (level != null)
+            return level;
+            else return "";
     }
 
     public void setLevel(String level) {
@@ -70,27 +79,34 @@ public class PromoteNotification {
     public void notify(String buildURL, String buildName, Integer buildNum, String level) {
 
         setLevel(level);
- 
-        try {
-
-           
-            String emailList = String.valueOf(Jenkins.getInstance().getItemByFullName(buildName, Job.class).getBuildByNumber(buildNum)
-                    .getAction(ParametersAction.class).getParameter("Promotion notification list").getValue());
+            try {
+            ParametersAction pa = Jenkins.getInstance().getItemByFullName(buildName, Job.class).getBuildByNumber(buildNum).getAction(ParametersAction.class);
+            if (pa != null){
+                List<ParameterValue> params = pa.getParameters();
+                if(params.size() > 0){
+                    for (ParameterValue p : params) {
+                        if (p == null) continue;
+                        System.out.println(p.getName());
+                        if (p.getName().equals("Promotion notification list")) {
+                            setEmailList(String.valueOf(p.getValue()));
+                            System.out.println(getEmailList());
+                        }
+                    } 
+                }
+            }
             
-            System.out.println(emailList);
-            setEmailList(emailList);
-            setSubject(
-                    "Build Promotion Notification: " + buildName + ":" + buildNum + " was promoted to " + this.level);
-            setBody("You are getting this message because you were added to this Jenkins build promotion notification list by the job owner.\n\n "
-                    + buildName + " build number " + buildNum + " was promoted to level: " + level + "\n\n Build URL: "
-                    + buildURL);
+            if (!getEmailList().isEmpty()){
+                
+                setSubject(
+                        "Build Promotion Notification: " + buildName + ":" + buildNum + " was promoted to " + this.level);
+                setBody("You are getting this message because you were added to this Jenkins build promotion notification list by the job owner.\n\n "
+                        + buildName + " build number " + buildNum + " was promoted to level: " + level + "\n\n Build URL: "
+                        + buildURL);
 
-            System.out.println(subject);
+                System.out.println(subject);
 
-            
-            if (!this.emailList.isEmpty()){
                 sendMail();
-            } else{System.out.println("Promotion notification list is empty.\nPlease make sure a job string parameter by this name exists and is not empty.");}
+            } else{ System.out.println("Promotion notification list is empty.\nPlease make sure a job string parameter by this name exists and is not empty.");}
         } catch (AccessDeniedException e) {
           e.printStackTrace();
       }
@@ -99,7 +115,7 @@ public class PromoteNotification {
       
     public void sendMail() {
 
-        if(!this.emailList.isEmpty() && !this.subject.isEmpty() && !this.body.isEmpty()){
+        if(!getEmailList().isEmpty() && !getSubject().isEmpty() && !getBody().isEmpty()){
             try
             {
                 InternetAddress sender = new InternetAddress(Mailer.descriptor().getAdminAddress());
