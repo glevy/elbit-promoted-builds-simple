@@ -91,17 +91,28 @@ public class PromoteNotification {
                             setEmailList(String.valueOf(p.getValue()));
                             System.out.println(getEmailList());
                         }
+                        if (p.getName().equals("Promotion notification Subject")) {
+                            setSubject(String.valueOf(p.getValue()));
+                            System.out.println(getSubject());
+                        }
+                        if (p.getName().equals("Promotion notification Body")) {
+                            setBody(String.valueOf(p.getValue()));
+                            System.out.println(getBody());
+                        }
                     } 
                 }
             }
             
             if (!getEmailList().isEmpty()){
-                
-                setSubject(
-                        "Build Promotion Notification: " + buildName + ":" + buildNum + " was promoted to " + this.level);
-                setBody("You are getting this message because you were added to this Jenkins build promotion notification list by the job owner.\n\n "
-                        + buildName + " build number " + buildNum + " was promoted to level: " + level + "\n\n Build URL: "
-                        + buildURL);
+                if (getSubject().isEmpty()){
+                    setSubject(
+                            "Build Promotion Notification: " + buildName + ":" + buildNum + " was promoted to " + this.level);
+                }
+                if (getBody().isEmpty()){
+                    setBody("You are getting this message because you were added to this Jenkins build promotion notification list by the job owner.\n\n "
+                            + buildName + " build number " + buildNum + " was promoted to level: " + level + "\n\n Build URL: "
+                            + buildURL);
+                }
 
                 System.out.println(subject);
 
